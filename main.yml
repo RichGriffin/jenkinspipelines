@@ -1,0 +1,25 @@
+---
+- name: Obtain BitBucket Token
+  shell: "{{ playbook_dir }}/access_token.sh"
+  register: bitbucket_token
+
+- name: Set Access Token
+  set_fact:
+    access_token: "{{ bitbucket_token.stdout }}"
+    formatted_repo_name: "{{ repo_name | lower | replace(' ', '-') }}"
+  no_log: yes
+
+- name: Check if repo exists
+  uri:
+    url: "{{ bitbucket_base_url.repository }}/{{ formatted_repo_name }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ access_token }}"
+    status_code: 200, 404
+  register: repo_exists
+
+- name: Set facts
+  set_fact:
+    repo_exists: "{{ repo_exists.status == 200 }}"
+    bitbucket_api_respository_url: "{{ bitbucket_base_url.repository }}/{{ formatted_repo_name }}"
+    bitbucket_workspace: "{{ bitbucket_workspace }}"
